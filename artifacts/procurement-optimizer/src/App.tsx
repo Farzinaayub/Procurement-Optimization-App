@@ -19,7 +19,6 @@ import {
   RotateCcw,
   Settings2,
   ShieldCheck,
-  Truck,
   X,
 } from 'lucide-react';
 import {
@@ -49,36 +48,21 @@ const groups: Array<{
   fields: Array<{ key: InputKey; label: string; unit: string; hint: string }>;
 }> = [
   {
-    title: 'Demand & capacity',
-    description: 'Volume the network must absorb this cycle.',
+    title: 'Procurement requirements',
+    description: 'Volume the network must fulfill this cycle.',
     icon: PackageCheck,
     fields: [
       { key: 'demand_x', label: 'Product X demand', unit: 'units', hint: 'Required volume' },
       { key: 'demand_y', label: 'Product Y demand', unit: 'units', hint: 'Required volume' },
+    ],
+  },
+  {
+    title: 'Business constraints',
+    description: 'Capacity and delivery guardrails for the recommendation.',
+    icon: Gauge,
+    fields: [
       { key: 'supplier_a_capacity', label: 'Supplier A capacity', unit: 'units', hint: 'Available capacity' },
       { key: 'supplier_b_capacity', label: 'Supplier B capacity', unit: 'units', hint: 'Available capacity' },
-    ],
-  },
-  {
-    title: 'Unit economics',
-    description: 'Landed purchase cost by supplier and product.',
-    icon: BarChart3,
-    fields: [
-      { key: 'x_cost_a', label: 'Product X · Supplier A', unit: '$ / unit', hint: 'Purchase cost' },
-      { key: 'x_cost_b', label: 'Product X · Supplier B', unit: '$ / unit', hint: 'Purchase cost' },
-      { key: 'y_cost_a', label: 'Product Y · Supplier A', unit: '$ / unit', hint: 'Purchase cost' },
-      { key: 'y_cost_b', label: 'Product Y · Supplier B', unit: '$ / unit', hint: 'Purchase cost' },
-    ],
-  },
-  {
-    title: 'Logistics constraints',
-    description: 'Fixed freight and delivery guardrails.',
-    icon: Truck,
-    fields: [
-      { key: 'shipping_a', label: 'Supplier A shipping', unit: '$ / order', hint: 'Fixed route cost' },
-      { key: 'shipping_b', label: 'Supplier B shipping', unit: '$ / order', hint: 'Fixed route cost' },
-      { key: 'delivery_a', label: 'Supplier A delivery', unit: 'days', hint: 'Transit time' },
-      { key: 'delivery_b', label: 'Supplier B delivery', unit: 'days', hint: 'Transit time' },
       { key: 'max_average_delivery', label: 'Max average delivery', unit: 'days', hint: 'Service ceiling' },
     ],
   },
@@ -167,6 +151,83 @@ function InputField({
   );
 }
 
+const supplierRows = [
+  {
+    name: 'Supplier A',
+    color: 'bg-[hsl(var(--primary))]',
+    fields: [
+      { key: 'x_cost_a' as InputKey, label: 'X Cost', unit: '$ / unit', step: '0.1' },
+      { key: 'y_cost_a' as InputKey, label: 'Y Cost', unit: '$ / unit', step: '0.1' },
+      { key: 'supplier_a_capacity' as InputKey, label: 'Capacity', unit: 'units', step: '1' },
+      { key: 'shipping_a' as InputKey, label: 'Shipping Cost', unit: '$ / order', step: '0.1' },
+      { key: 'delivery_a' as InputKey, label: 'Delivery Days', unit: 'days', step: '0.1' },
+    ],
+  },
+  {
+    name: 'Supplier B',
+    color: 'bg-[hsl(var(--accent))]',
+    fields: [
+      { key: 'x_cost_b' as InputKey, label: 'X Cost', unit: '$ / unit', step: '0.1' },
+      { key: 'y_cost_b' as InputKey, label: 'Y Cost', unit: '$ / unit', step: '0.1' },
+      { key: 'supplier_b_capacity' as InputKey, label: 'Capacity', unit: 'units', step: '1' },
+      { key: 'shipping_b' as InputKey, label: 'Shipping Cost', unit: '$ / order', step: '0.1' },
+      { key: 'delivery_b' as InputKey, label: 'Delivery Days', unit: 'days', step: '0.1' },
+    ],
+  },
+] as const;
+
+function SupplierDataTable({
+  inputs,
+  errors,
+  onChange,
+}: {
+  inputs: ProcurementInputs;
+  errors: FieldErrors;
+  onChange: (key: InputKey, value: number) => void;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border" data-testid="supplier-data-table">
+      <table className="min-w-[520px] w-full table-fixed border-collapse">
+        <thead className="bg-[hsl(var(--muted)/.55)]">
+          <tr className="font-mono text-[10px] uppercase tracking-[.12em] text-muted-foreground">
+            <th className="px-3 py-3 text-left font-medium">Supplier</th>
+            {supplierRows[0].fields.map((field) => <th key={field.key} className="px-2 py-3 text-left font-medium">{field.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {supplierRows.map((supplier) => (
+            <tr key={supplier.name} className="border-t border-border">
+              <th className="whitespace-nowrap px-3 py-4 text-left text-xs font-bold">
+                <span className={`mr-2 inline-block size-2 rounded-full ${supplier.color}`} />
+                {supplier.name}
+              </th>
+              {supplier.fields.map((field) => (
+                <td key={field.key} className="px-2 py-3">
+                  <label className="block">
+                    <span className="sr-only">{supplier.name} {field.label}</span>
+                    <span className={`flex min-w-[112px] items-center rounded-md border bg-background transition-colors focus-within:border-[hsl(var(--primary))] ${errors[field.key] ? 'border-[hsl(var(--destructive))]' : 'border-input'}`}>
+                      <input
+                        className="min-w-0 w-full bg-transparent px-2 py-2 font-mono text-xs font-medium text-foreground outline-none"
+                        type="number"
+                        min="0"
+                        step={field.step}
+                        value={inputs[field.key]}
+                        onChange={(event) => onChange(field.key, Number(event.target.value))}
+                        aria-invalid={Boolean(errors[field.key])}
+                        data-testid={`table-input-${field.key}`}
+                      />
+                    </span>
+                  </label>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function SkeletonPanel() {
   return (
     <div className="space-y-5" data-testid="loading-defaults">
@@ -221,9 +282,38 @@ function AllocationTable({ result }: { result: OptimizationResult }) {
   );
 }
 
-function ResultWorkspace({ result }: { result: OptimizationResult }) {
+function StatusRow({ label, satisfied }: { label: string; satisfied: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border py-2.5 last:border-0">
+      <span className="text-xs font-semibold">{label}</span>
+      <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[.08em] ${satisfied ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--destructive))]'}`}>
+        {satisfied ? <Check size={13} /> : <X size={13} />}
+        {satisfied ? 'Satisfied' : 'Not satisfied'}
+      </span>
+    </div>
+  );
+}
+
+function buildDecisionExplanation(result: OptimizationResult, inputs: ProcurementInputs) {
+  const supplierA = result.allocation.supplier_a;
+  const supplierB = result.allocation.supplier_b;
+  const activeSuppliers = [
+    supplierA.total > 0 ? `Supplier A (${formatDecimal(supplierA.total, 0)} units)` : null,
+    supplierB.total > 0 ? `Supplier B (${formatDecimal(supplierB.total, 0)} units)` : null,
+  ].filter(Boolean);
+  const deliveryStatus = result.delivery.average_days <= result.delivery.maximum_allowed_days
+    ? `The ${formatDecimal(result.delivery.average_days)}-day average is within the ${formatDecimal(result.delivery.maximum_allowed_days)}-day limit.`
+    : `The ${formatDecimal(result.delivery.average_days)}-day average is above the ${formatDecimal(result.delivery.maximum_allowed_days)}-day limit.`;
+  return `The model activates ${activeSuppliers.join(' and ')} to fulfill ${formatDecimal(inputs.demand_x + inputs.demand_y, 0)} total units. It selected this mix using the submitted unit costs, fixed shipping costs, supplier capacities, and delivery times. ${deliveryStatus}`;
+}
+
+function ResultWorkspace({ result, inputs }: { result: OptimizationResult; inputs: ProcurementInputs }) {
   const deliveryWithinLimit = result.delivery.average_days <= result.delivery.maximum_allowed_days;
   const activated = [result.supplier_usage.supplier_a > 0, result.supplier_usage.supplier_b > 0].filter(Boolean).length;
+  const xSatisfied = Math.abs(result.allocation.supplier_a.x + result.allocation.supplier_b.x - inputs.demand_x) < 0.001;
+  const ySatisfied = Math.abs(result.allocation.supplier_a.y + result.allocation.supplier_b.y - inputs.demand_y) < 0.001;
+  const supplierACapacitySatisfied = result.allocation.supplier_a.total <= inputs.supplier_a_capacity + 0.001;
+  const supplierBCapacitySatisfied = result.allocation.supplier_b.total <= inputs.supplier_b_capacity + 0.001;
   return (
     <div className="space-y-4" data-testid="optimization-result">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -248,7 +338,21 @@ function ResultWorkspace({ result }: { result: OptimizationResult }) {
       </div>
       <AllocationTable result={result} />
       <div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="mb-2">
+              <p className="text-sm font-extrabold">Constraint status</p>
+              <p className="mt-1 text-xs text-muted-foreground">Checks calculated from the returned allocation.</p>
+            </div>
+            <div data-testid="constraint-status">
+              <StatusRow label="X demand" satisfied={xSatisfied} />
+              <StatusRow label="Y demand" satisfied={ySatisfied} />
+              <StatusRow label="Supplier A capacity" satisfied={supplierACapacitySatisfied} />
+              <StatusRow label="Supplier B capacity" satisfied={supplierBCapacitySatisfied} />
+              <StatusRow label="Average delivery time" satisfied={deliveryWithinLimit} />
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-extrabold">Supplier utilization</p>
@@ -275,12 +379,13 @@ function ResultWorkspace({ result }: { result: OptimizationResult }) {
               );
             })}
           </div>
+          </div>
         </div>
         <div className="rounded-lg border border-border bg-[hsl(var(--foreground))] p-4 text-[hsl(var(--background))]">
           <div className="flex items-start justify-between">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Decision note</p>
-              <p className="mt-3 text-[15px] font-bold leading-6">{result.message || 'The recommended plan is ready for review.'}</p>
+              <p className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Why this decision?</p>
+              <p className="mt-3 text-[15px] font-bold leading-6">{buildDecisionExplanation(result, inputs)}</p>
             </div>
             <ShieldCheck size={20} className="shrink-0 text-[hsl(var(--primary))]" />
           </div>
@@ -396,7 +501,7 @@ function Workspace() {
             <button className="rounded-md border border-border bg-card p-2 lg:hidden" onClick={() => setMobileNavOpen(true)} data-testid="button-open-navigation" aria-label="Open navigation"><Menu size={18} /></button>
             <div>
               <p className="hidden font-mono text-[9px] uppercase tracking-[.18em] text-muted-foreground sm:block">Supplyline / Optimization</p>
-              <h1 className="text-[15px] font-extrabold tracking-[-.02em]">Procurement workspace</h1>
+              <h1 className="text-[15px] font-extrabold tracking-[-.02em]">Procurement Allocation Optimizer</h1>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
@@ -418,8 +523,8 @@ function Workspace() {
                   <span className="rounded bg-[hsl(var(--primary))] px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[.14em] text-[hsl(var(--primary-foreground))]">Live model</span>
                   <span className="font-mono text-[10px] uppercase tracking-[.13em] text-muted-foreground">v1.0 / PuLP optimization</span>
                 </div>
-                <h2 className="max-w-[700px] text-[clamp(29px,4vw,46px)] font-extrabold leading-[1.05] tracking-[-.055em] text-foreground">Make the call with<br /><span className="text-[hsl(var(--accent))]">the full picture.</span></h2>
-                <p className="mt-4 max-w-[580px] text-sm leading-6 text-muted-foreground">Set the commercial reality. Supplyline finds the allocation that meets demand, respects your delivery promise, and shows its work.</p>
+                <h2 className="max-w-[760px] text-[clamp(29px,4vw,46px)] font-extrabold leading-[1.05] tracking-[-.055em] text-foreground">Procurement Allocation<br /><span className="text-[hsl(var(--accent))]">Optimizer</span></h2>
+                <p className="mt-4 max-w-[620px] text-sm leading-6 text-muted-foreground">Find the lowest-cost supplier allocation while respecting capacity and delivery requirements.</p>
               </div>
               <div className="flex flex-wrap gap-2 xl:pb-1">
                 <MetricChip label="Demand" value={`${formatDecimal(totalDemand, 0)} units`} />
@@ -447,7 +552,7 @@ function Workspace() {
               </div>
             )}
 
-            <div className="grid items-start gap-5 xl:grid-cols-[minmax(420px,.88fr)_minmax(540px,1.45fr)]">
+            <div className="grid items-start gap-5 xl:grid-cols-[minmax(560px,1fr)_minmax(520px,1fr)]">
               <section id="inputs" className="workspace-enter workspace-enter-delay-1 rounded-xl border border-border bg-card p-5 shadow-[0_8px_30px_hsl(var(--foreground)/.035)] sm:p-6" data-testid="panel-inputs">
                 <div className="mb-6 flex items-start justify-between gap-4">
                   <div>
@@ -472,6 +577,10 @@ function Workspace() {
                         </div>
                       </div>
                     ))}
+                     <div className="border-t border-border pt-5">
+                       <SectionLabel icon={BarChart3} eyebrow="03 / Supplier data" title="Supplier data" description="Editable commercial and logistics inputs used by the model." />
+                       <SupplierDataTable inputs={currentInputs!} errors={errors} onChange={updateInput} />
+                     </div>
                   </div>
                 )}
                 <div className="mt-7 border-t border-border pt-5">
@@ -500,7 +609,7 @@ function Workspace() {
                     <div className="grid gap-3 sm:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-[112px] animate-pulse rounded-lg bg-muted" />)}</div>
                     <div className="h-[260px] animate-pulse rounded-lg bg-muted" />
                   </div>
-                ) : result ? <ResultWorkspace result={result} /> : (
+                ) : result && inputs ? <ResultWorkspace result={result} inputs={inputs} /> : (
                   <div className="relative overflow-hidden rounded-xl border border-dashed border-[hsl(var(--accent)/.35)] bg-[hsl(var(--card)/.72)] px-6 py-16 text-center sm:px-16" data-testid="empty-results">
                     <div className="absolute -right-10 -top-10 size-36 rounded-full border-[18px] border-[hsl(var(--primary)/.13)]" />
                     <div className="absolute -bottom-16 -left-8 size-40 rounded-full border-[22px] border-[hsl(var(--accent)/.08)]" />

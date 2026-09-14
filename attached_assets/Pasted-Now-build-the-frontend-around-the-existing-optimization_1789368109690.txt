@@ -1,0 +1,130 @@
+Now build the frontend around the existing optimization model.
+
+Keep the first version deliberately simple.
+
+The application should have one main page titled:
+
+"Procurement Allocation Optimizer"
+
+Subtitle:
+
+"Find the lowest-cost supplier allocation while respecting capacity and delivery requirements."
+
+SECTION 1: PROCUREMENT REQUIREMENTS
+
+Create editable input fields:
+
+Required X quantity
+Default: 100
+
+Required Y quantity
+Default: 80
+
+SECTION 2: BUSINESS CONSTRAINTS
+
+Create editable input fields:
+
+Supplier A maximum capacity
+Default: 40
+
+Supplier B maximum capacity
+Default: 180
+
+Maximum average delivery time
+Default: 3.5 days
+
+SECTION 3: SUPPLIER DATA
+
+Create an editable table:
+
+Supplier | X Cost | Y Cost | Capacity | Shipping Cost | Delivery Days
+
+Supplier A:
+10 | 12 | 40 | 300 | 5
+
+Supplier B:
+15 | 10 | 180 | 100 | 2
+
+All values should be editable.
+
+SECTION 4
+
+Create a prominent button:
+
+RUN OPTIMIZATION
+
+When clicked:
+
+1. Collect the current frontend values.
+2. Send them to the FastAPI optimization endpoint.
+3. Show a loading state.
+4. Display the returned optimization result.
+5. Do not calculate the optimization in JavaScript.
+
+SECTION 5: RECOMMENDED DECISION
+
+Display a clear allocation table:
+
+Supplier | X | Y | Total
+
+Show the recommended allocation returned by the Python optimization model.
+
+SECTION 6: PROCUREMENT VALUE
+
+Display:
+
+Total Procurement Cost
+Purchase Cost
+Shipping Cost
+Average Delivery Time
+
+Also show:
+
+Maximum Allowed Delivery Time
+
+Clearly indicate whether the delivery requirement was satisfied.
+
+SECTION 7: CONSTRAINT STATUS
+
+Display:
+
+X Demand: Satisfied
+Y Demand: Satisfied
+Supplier A Capacity: Satisfied
+Supplier B Capacity: Satisfied
+Average Delivery Time: Satisfied
+
+These statuses must be calculated from the actual optimization response.
+
+SECTION 8: WHY THIS DECISION?
+
+Generate a concise plain-English explanation based on the returned allocation and supplier input data.
+
+The explanation should help a procurement professional understand why the optimizer allocated quantities as it did.
+
+Do not make up reasons that are not supported by the model inputs.
+
+DESIGN
+
+Make the application look like a professional procurement analytics tool.
+
+Use:
+- clean typography
+- restrained colors
+- clear tables
+- strong hierarchy
+- professional KPI cards
+- simple charts only where useful
+
+Do not use:
+- futuristic AI styling
+- excessive gradients
+- unnecessary animations
+- fake metrics
+- placeholder results
+
+The application must display actual results from the PuLP model.
+
+The central interaction is:
+
+CHANGE BUSINESS INPUT → RUN OPTIMIZATION → SEE RECOMMENDED DECISION

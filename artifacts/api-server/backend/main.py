@@ -58,6 +58,11 @@ def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api")
+def api_root() -> dict[str, str]:
+    return {"status": "ok", "service": "procurement-optimization-api"}
+
+
 @app.get("/api/optimization/defaults", response_model=ProcurementInputs)
 def get_optimization_defaults() -> ProcurementInputs:
     return ProcurementInputs(**model_defaults())

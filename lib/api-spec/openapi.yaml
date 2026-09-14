@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: optimization
+    description: Procurement optimization operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /optimization/defaults:
+    get:
+      operationId: getOptimizationDefaults
+      tags: [optimization]
+      summary: Get model defaults
+      description: Returns the current default inputs exposed by the source-of-truth optimization model.
+      responses:
+        "200":
+          description: Default procurement inputs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementInputs"
+        "503":
+          description: Optimization runtime unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /optimization/run:
+    post:
+      operationId: runOptimization
+      tags: [optimization]
+      summary: Run procurement optimization
+      description: Runs the existing PuLP procurement model using the supplied business inputs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcurementInputs"
+      responses:
+        "200":
+          description: Optimization results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationResult"
+        "400":
+          description: Invalid inputs or no feasible solution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Optimization runtime unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +85,123 @@ components:
           type: string
       required:
         - status
+    ProcurementInputs:
+      type: object
+      properties:
+        demand_x:
+          type: integer
+          minimum: 0
+        demand_y:
+          type: integer
+          minimum: 0
+        supplier_a_capacity:
+          type: integer
+          minimum: 0
+        supplier_b_capacity:
+          type: integer
+          minimum: 0
+        x_cost_a:
+          type: number
+          minimum: 0
+        x_cost_b:
+          type: number
+          minimum: 0
+        y_cost_a:
+          type: number
+          minimum: 0
+        y_cost_b:
+          type: number
+          minimum: 0
+        shipping_a:
+          type: number
+          minimum: 0
+        shipping_b:
+          type: number
+          minimum: 0
+        delivery_a:
+          type: number
+          minimum: 0
+        delivery_b:
+          type: number
+          minimum: 0
+        max_average_delivery:
+          type: number
+          minimum: 0
+      required:
+        - demand_x
+        - demand_y
+        - supplier_a_capacity
+        - supplier_b_capacity
+        - x_cost_a
+        - x_cost_b
+        - y_cost_a
+        - y_cost_b
+        - shipping_a
+        - shipping_b
+        - delivery_a
+        - delivery_b
+        - max_average_delivery
+    SupplierAllocation:
+      type: object
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+        total:
+          type: number
+      required: [x, y, total]
+    OptimizationResult:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: ["string", "null"]
+        allocation:
+          type: object
+          properties:
+            supplier_a:
+              $ref: "#/components/schemas/SupplierAllocation"
+            supplier_b:
+              $ref: "#/components/schemas/SupplierAllocation"
+          required: [supplier_a, supplier_b]
+        cost:
+          type: object
+          properties:
+            purchase:
+              type: number
+            shipping:
+              type: number
+            total:
+              type: number
+          required: [purchase, shipping, total]
+        delivery:
+          type: object
+          properties:
+            average_days:
+              type: number
+            maximum_allowed_days:
+              type: number
+          required: [average_days, maximum_allowed_days]
+        supplier_usage:
+          type: object
+          properties:
+            supplier_a:
+              type: number
+            supplier_b:
+              type: number
+          required: [supplier_a, supplier_b]
+      required:
+        - status
+        - allocation
+        - cost
+        - delivery
+        - supplier_usage
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
 

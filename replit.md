@@ -1,6 +1,6 @@
-# [Project name]
+# Procurement Optimizer
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An interactive procurement decision-support workspace that runs the existing PuLP model and explains supplier allocation, cost, and delivery impact.
 
 ## Run & Operate
 
@@ -14,23 +14,34 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
+- API: FastAPI + Uvicorn
+- Optimization: Python + PuLP
+- Frontend: React + Vite
+- Database: PostgreSQL + Drizzle ORM (available for future persistence; not required for the current scenario workflow)
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/procurement-optimizer` — responsive React workspace and results UI.
+- `artifacts/api-server/backend/optimizer.py` — source-of-truth PuLP model.
+- `artifacts/api-server/backend/main.py` — FastAPI wrapper for defaults, health, and optimization endpoints.
+- `lib/api-spec/openapi.yaml` — source of truth for the API contract.
+- `lib/api-client-react/src/generated` — generated React Query client and types.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The optimization equations remain in the Python module; the API only validates inputs, invokes the model, and returns structured results.
+- Model defaults are exposed from the Python function signature so the frontend does not duplicate business inputs.
+- Scenarios are intentionally not persisted; each run is an explicit, user-controlled decision scenario.
+- The frontend uses generated API hooks and never implements optimization logic.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Procurement professionals can edit demand, capacity, cost, shipping, and delivery inputs.
+- The workspace can run the model and show allocation by supplier/product, total cost, average delivery, capacity utilization, and supplier activation.
+- Loading, validation, service error, infeasible-scenario, empty, success, and responsive mobile states are supported.
 
 ## User preferences
 
@@ -38,7 +49,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The API workflow runs with `artifacts/api-server` as its working directory, so its Uvicorn command must use `backend/main.py`, not a workspace-root-prefixed path.
+- Regenerate the API client after changing `lib/api-spec/openapi.yaml`.
 
 ## Pointers
 

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from optimizer import optimize_procurement
+from backend.optimizer import optimize_procurement
 
 
 class ProcurementInputs(BaseModel):
@@ -37,6 +37,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"status": "ok", "service": "procurement-optimization-api"}
 
 
 @app.exception_handler(HTTPException)
@@ -89,14 +94,3 @@ def run_optimization(inputs: ProcurementInputs) -> dict[str, Any]:
         )
 
     return result
-
-
-if __name__ == "__main__":
-    import os
-    import uvicorn
-
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", "8080")),
-    )

@@ -3,8 +3,8 @@ name: Python API workflow convention
 description: Artifact-managed API services run commands relative to their artifact directory.
 ---
 
-For an artifact-managed Python API, the workflow command runs with the API artifact directory as its working directory. Use paths relative to that directory in the command, while Python imports can remain local to the backend package.
+Managed development workflows run with the API artifact directory as their working directory, but artifact production commands may start from the workspace root. Production commands should explicitly `cd artifacts/api-server` before launching the backend; once there, use package imports such as `backend.main:app`.
 
-**Why:** A workspace-root-prefixed script path was resolved twice by the workflow and prevented the service from starting.
+**Why:** The development workflow and production publisher do not guarantee the same working directory. A production command that assumes the artifact directory can fail before opening its configured port.
 
-**How to apply:** When changing or adding Python API workflows, validate the command from the artifact directory and keep workspace-root paths out of the workflow command.
+**How to apply:** Validate both the managed workflow and the production-style command from the workspace root. Keep the production command's directory change explicit and bind Uvicorn to the injected `PORT`.

@@ -10,7 +10,7 @@ name = "API Server"
 paths = ["/api"]
 
 [services.development]
-run = "uv run python backend/main.py"
+run = "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
 
 [services.production]
 
@@ -21,7 +21,7 @@ args = ["uv", "sync", "--no-dev"]
 NODE_ENV = "production"
 
 [services.production.run]
-args = ["uv", "run", "python", "backend/main.py"]
+args = ["sh", "-c", "cd artifacts/api-server && exec uvicorn backend.main:app --host 0.0.0.0 --port \"$PORT\""]
 
 [services.production.run.env]
 PORT = "8080"

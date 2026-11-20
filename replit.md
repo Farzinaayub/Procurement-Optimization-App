@@ -55,3 +55,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+
+## Cloudflare deployment
+
+The app is also published on Cloudflare Workers. See `DEPLOY.md` (build with `pnpm run cf:build`, deploy with `pnpm run cf:deploy`). Cloudflare-only code lives in `cloudflare/`; the Replit setup is unchanged.

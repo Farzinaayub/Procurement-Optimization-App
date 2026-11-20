@@ -1,0 +1,15 @@
+// Cloudflare Workers config for the Procurement Optimizer.
+// worker.js answers /api/* (JS port of the PuLP model); the React build is static assets.
+// Build first: pnpm run cf:build   Then: pnpm run cf:deploy
+{
+  "name": "procurement-optimiser",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "../artifacts/procurement-optimizer/dist/public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api", "/api/*"]
+  }
+}
